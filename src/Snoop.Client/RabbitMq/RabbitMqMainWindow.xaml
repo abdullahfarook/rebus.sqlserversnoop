@@ -1,0 +1,284 @@
+<Window
+    x:Class="Snoop.Client.RabbitMq.RabbitMqMainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:client="clr-namespace:Snoop.Client"
+    xmlns:rabbitmq="clr-namespace:Snoop.Client.RabbitMq"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Name="Root"
+    Title="Rebus RabbitMQ Snoop"
+    Width="1250"
+    Height="800"
+    mc:Ignorable="d"
+    Loaded="MainWindow_OnLoaded">
+    <Window.Resources>
+        <client:BooleanToVisibilityValueConverter x:Key="BooleanToVisibilityConverter" IsInverted="False" />
+        <client:BooleanToVisibilityValueConverter x:Key="InvertedBooleanToVisibilityConverter" IsInverted="True" />
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400*" />
+            <ColumnDefinition Width="300*" />
+            <ColumnDefinition Width="500*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="225" />
+            <RowDefinition Height="550*" />
+        </Grid.RowDefinitions>
+        <Border
+            Grid.Column="0"
+            Margin="5"
+            BorderBrush="Black"
+            BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <WrapPanel>
+                    <TextBlock
+                        Margin="10,0,10,0"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Text="RabbitMQ Connections" />
+                    <Button
+                        Margin="5"
+                        Command="{Binding AddCommand}"
+                        Content="New" />
+                </WrapPanel>
+                <ListView
+                    Grid.Row="1"
+                    HorizontalContentAlignment="Stretch"
+                    ItemsSource="{Binding Connections}"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    SelectedItem="{Binding SelectedConnection}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate DataType="rabbitmq:RabbitMqConnectionViewModel">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="50" />
+                                    <ColumnDefinition Width="50" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="35" />
+                                </Grid.RowDefinitions>
+                                <Label
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="2"
+                                    Margin="5"
+                                    Content="{Binding ConnectionString}"
+                                    Visibility="{Binding IsEditing, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" />
+                                <Button
+                                    Grid.Column="2"
+                                    Command="{Binding EditCommand}"
+                                    Content="Edit"
+                                    Visibility="{Binding IsEditing, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" />
+                                <TextBox
+                                    Grid.Column="0"
+                                    Margin="5"
+                                    VerticalContentAlignment="Center"
+                                    IsVisibleChanged="UIElement_OnIsVisibleChanged"
+                                    Text="{Binding ConnectionString, Mode=TwoWay}"
+                                    Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Command="{Binding SaveCommand}"
+                                    Content="Save"
+                                    Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <Button
+                                    Grid.Column="2"
+                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}"
+                                    Content="Delete"
+                                    Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
+        <Border
+            Grid.Row="0"
+            Grid.Column="1"
+            Margin="5"
+            Padding="2"
+            BorderBrush="Black"
+            BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock
+                    Grid.Row="0"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    Text="Queues" />
+                <ListView 
+                    Grid.Row="1"
+                    HorizontalContentAlignment="Stretch"
+                    BorderThickness="0"
+                    ItemsSource="{Binding SelectedConnection.Queues}"
+                    SelectedItem="{Binding SelectedConnection.SelectedQueue}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate DataType="rabbitmq:RabbitMqQueueViewModel">
+                            <Grid >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Text="{Binding QueueName}" />
+                                    <TextBlock>
+                                        <Run Text="(" />
+                                        <Run Text="{Binding MessageCount}" />
+                                        <Run Text=" messages, " />
+                                        <Run Text="{Binding ConsumerCount}" />
+                                        <Run Text=" consumers)" />
+                                    </TextBlock>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
+                                    <Button
+                                        Command="{Binding ElementName=Root, Path=DataContext.SelectedConnection.ReloadMessagesCommand}"
+                                        CommandParameter="{Binding}"
+                                        Content="Reload" />
+                                    <Button
+                                        Command="{Binding ElementName=Root, Path=DataContext.SelectedConnection.PurgeCommand}"
+                                        CommandParameter="{Binding}"
+                                        Content="Purge" />
+                                    <Button
+                                        Command="{Binding ElementName=Root, Path=DataContext.SelectedConnection.ReturnAllToSourceQueueCommand}"
+                                        CommandParameter="{Binding}"
+                                        Content="Return all to source queue" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
+        <Border
+            Grid.Row="1"
+            Grid.Column="0"
+            Grid.ColumnSpan="2"
+            Margin="5"
+            BorderBrush="Black"
+            BorderThickness="1">
+            <ListView ItemsSource="{Binding SelectedConnection.SelectedQueue.Messages}"
+                      SelectedItem="{Binding SelectedConnection.SelectedQueue.SelectedMessage}">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn
+                            Width="Auto"
+                            DisplayMemberBinding="{Binding Type}"
+                            Header="Message type" />
+                        <GridViewColumn
+                            Width="Auto"
+                            DisplayMemberBinding="{Binding SourceQueue}"
+                            Header="Source queue" />
+                        <GridViewColumn
+                            Width="Auto"
+                            DisplayMemberBinding="{Binding SentTime}"
+                            Header="Sent time" />
+                        <GridViewColumn
+                            Width="Auto"
+                            DisplayMemberBinding="{Binding VisibleFrom}"
+                            Header="Visible from" />
+                        <GridViewColumn
+                            Width="Auto"
+                            DisplayMemberBinding="{Binding ExpiresAt}"
+                            Header="Expires at" />
+                        <GridViewColumn Width="Auto" Header="Actions">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button
+                                            Width="50"
+                                            Command="{Binding ElementName=Root, Path=DataContext.SelectedConnection.SelectedQueue.DeleteMessageCommand}"
+                                            CommandParameter="{Binding}"
+                                            Content="Delete" />
+                                        <Button
+                                            Margin="5,0,0,0"
+                                            Command="{Binding ElementName=Root, Path=DataContext.SelectedConnection.SelectedQueue.ReturnToSourceQueueCommand}"
+                                            CommandParameter="{Binding}"
+                                            Content="Return to source queue" />
+                                        <Button
+                                            Margin="5,0,0,0"
+                                            Command="{Binding ElementName=Root, Path=DataContext.SelectedConnection.SelectedQueue.SetVisibleNowCommand}"
+                                            CommandParameter="{Binding}"
+                                            Content="Set visible now" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Border>
+        <Border
+            Grid.Row="0"
+            Grid.Column="2"
+            Margin="5"
+            BorderBrush="Black"
+            BorderThickness="1">
+            <ListView ItemsSource="{Binding SelectedConnection.SelectedQueue.SelectedMessage.Headers}">
+
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn
+                            Width="Auto"
+                            DisplayMemberBinding="{Binding Key}"
+                            Header="Key" />
+                        <GridViewColumn
+                            Width="Auto"
+                            DisplayMemberBinding="{Binding Value}"
+                            Header="Value" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Border>
+        <Border
+            Grid.Row="1"
+            Grid.Column="2"
+            Margin="5"
+            Padding="5"
+            BorderBrush="Black"
+            BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock
+                    Grid.Row="0"
+                    FontWeight="Bold"
+                    Text="Body:" />
+                <TextBox
+                    Grid.Row="1"
+                    IsReadOnly="True"
+                    IsReadOnlyCaretVisible="True"
+                    Text="{Binding SelectedConnection.SelectedQueue.SelectedMessage.Body}" />
+                <TextBlock
+                    Grid.Row="2"
+                    FontWeight="Bold"
+                    Text="Error:" />
+                <TextBox
+                    Grid.Row="3"
+                    IsReadOnly="True"
+                    IsReadOnlyCaretVisible="True"
+                    Text="{Binding SelectedConnection.SelectedQueue.SelectedMessage.ErrorDetails}"
+                    TextWrapping="WrapWithOverflow"
+                    VerticalScrollBarVisibility="Auto" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
+
+

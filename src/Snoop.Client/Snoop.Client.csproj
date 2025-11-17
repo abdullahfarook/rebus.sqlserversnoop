@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
@@ -14,6 +14,9 @@
     <PackageReference Include="rebus" Version="6.6.1" />
     <PackageReference Include="rebus.castle.windsor" Version="6.1.0" />
     <PackageReference Include="rebus.sqlserver" Version="7.2.0" />
+    <PackageReference Include="rebus.rabbitmq" Version="7.0.0" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.4.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 </Project>
